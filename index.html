@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NBA Draft Combine Athletic Testing Table</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d7dce2;
+      --header: #eef2f6;
+      --accent: #2563eb;
+      --row-alt: #fafafa;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.35rem, 2vw, 2rem);
+    }
+
+    .note {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+      padding: 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    select, input {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    button {
+      font: inherit;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    button:hover, th.sortable:hover {
+      border-color: var(--accent);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--header);
+      font-size: .86rem;
+      line-height: 1.2;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable::after {
+      content: " ↕";
+      color: var(--muted);
+      font-weight: normal;
+    }
+
+    th.sorted-asc::after {
+      content: " ↑";
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: " ↓";
+      color: var(--accent);
+    }
+
+    .rank-cell {
+      font-weight: 700;
+    }
+
+    .missing {
+      color: var(--muted);
+    }
+
+    .summary {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Combine Athletic Testing Table</h1>
+    <p class="note">
+      Click any column header to sort. The Rank column uses competition ranking, so ties share a rank and the next rank skips ahead, like 1, 2, 2, 4. Use the separate player and position filters to avoid position terms matching player names. For time columns, lower is better. For jump and bench columns, higher is better. Missing values are unranked and sort to the bottom.
+    </p>
+
+    <section class="controls" aria-label="Table controls">
+      <label>
+        Rank by
+        <select id="rankMetric"></select>
+      </label>
+      <label>
+        Filter player names
+        <input id="playerSearch" type="search" placeholder="e.g. Boozer" />
+      </label>
+      <label>
+        Filter position
+        <select id="positionFilter">
+          <option value="">All positions</option>
+          <option value="G">All guards, G</option>
+          <option value="F">All forwards, F</option>
+          <option value="PG">PG</option>
+          <option value="SG">SG</option>
+          <option value="SF">SF</option>
+          <option value="PF">PF</option>
+          <option value="C">C</option>
+        </select>
+      </label>
+      <button id="reset" type="button">Reset</button>
+    </section>
+
+    <div class="table-scroll">
+      <table id="combineTable">
+        <thead>
+          <tr>
+            <th class="num">Rank</th>
+            <th class="sortable" data-key="PLAYER" data-type="string">Player</th>
+            <th class="sortable" data-key="POS" data-type="string">Pos</th>
+            <th class="sortable num" data-key="lane" data-type="number">Lane Agility<br>(sec)</th>
+            <th class="sortable num" data-key="shuttle" data-type="number">Shuttle Run<br>(sec)</th>
+            <th class="sortable num" data-key="sprint" data-type="number">3/4 Sprint<br>(sec)</th>
+            <th class="sortable num" data-key="standing" data-type="number">Standing Vert<br>(in)</th>
+            <th class="sortable num" data-key="maxvert" data-type="number">Max Vert<br>(in)</th>
+            <th class="sortable num" data-key="bench" data-type="number">Bench Press<br>(reps)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <p id="summary" class="summary"></p>
+  </main>
+
+  <script>
+    const data = [
+  {
+    "PLAYER": "Billy Richmond III",
+    "POS": "SF",
+    "lane": 10.23,
+    "shuttle": 2.82,
+    "sprint": 3.06,
+    "standing": 32.5,
+    "maxvert": 41.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Cameron Carr",
+    "POS": "SG",
+    "lane": 10.46,
+    "shuttle": 2.8,
+    "sprint": 3.17,
+    "standing": 38.0,
+    "maxvert": 42.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Christopher Brown Jr",
+    "POS": "PG",
+    "lane": 10.57,
+    "shuttle": 2.89,
+    "sprint": 3.24,
+    "standing": 33.5,
+    "maxvert": 39.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Brayden Burries",
+    "POS": "SG",
+    "lane": 10.59,
+    "shuttle": 2.92,
+    "sprint": 3.21,
+    "standing": 35.0,
+    "maxvert": 38.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Morez Johnson",
+    "POS": "PF",
+    "lane": 10.59,
+    "shuttle": 2.91,
+    "sprint": 3.17,
+    "standing": 33.5,
+    "maxvert": 39.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Kingston Flemings",
+    "POS": "PG",
+    "lane": 10.61,
+    "shuttle": 2.69,
+    "sprint": 3.07,
+    "standing": 33.5,
+    "maxvert": 40.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jeremy Fears Jr.",
+    "POS": "PG",
+    "lane": 10.62,
+    "shuttle": 3.1,
+    "sprint": 3.11,
+    "standing": 32.0,
+    "maxvert": 39.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Ryan Conwell",
+    "POS": "SG",
+    "lane": 10.69,
+    "shuttle": 2.86,
+    "sprint": 3.21,
+    "standing": 32.5,
+    "maxvert": 39.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Milos Uzan",
+    "POS": "PG",
+    "lane": 10.7,
+    "shuttle": 2.87,
+    "sprint": 3.21,
+    "standing": 28.0,
+    "maxvert": 35.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Bryce Hopkins",
+    "POS": "PF",
+    "lane": 10.71,
+    "shuttle": 2.95,
+    "sprint": 3.26,
+    "standing": 30.0,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Baba Miller",
+    "POS": "PF",
+    "lane": 10.71,
+    "shuttle": 2.7,
+    "sprint": 3.23,
+    "standing": 31.5,
+    "maxvert": 34.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Ebuka Okorie",
+    "POS": "PG",
+    "lane": 10.71,
+    "shuttle": 2.96,
+    "sprint": 3.26,
+    "standing": 31.5,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Amari Allen",
+    "POS": "SF",
+    "lane": 10.72,
+    "shuttle": 2.94,
+    "sprint": 3.19,
+    "standing": 34.5,
+    "maxvert": 42.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jaden Bradley",
+    "POS": "PG",
+    "lane": 10.75,
+    "shuttle": 3.13,
+    "sprint": 3.2,
+    "standing": 30.5,
+    "maxvert": 36.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Christopher Cenac Jr.",
+    "POS": "PF",
+    "lane": 10.76,
+    "shuttle": 2.84,
+    "sprint": 3.27,
+    "standing": 33.0,
+    "maxvert": 37.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Braden Smith",
+    "POS": "PG",
+    "lane": 10.76,
+    "shuttle": 2.87,
+    "sprint": 3.23,
+    "standing": 31.0,
+    "maxvert": 38.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Emanuel Sharp",
+    "POS": "SG",
+    "lane": 10.77,
+    "shuttle": 2.8,
+    "sprint": 3.19,
+    "standing": 27.5,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Nicholas Boyd",
+    "POS": "PG",
+    "lane": 10.78,
+    "shuttle": 3.06,
+    "sprint": 3.07,
+    "standing": 30.5,
+    "maxvert": 36.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Kylan Boswell",
+    "POS": "PG",
+    "lane": 10.82,
+    "shuttle": 2.92,
+    "sprint": 3.22,
+    "standing": 33.0,
+    "maxvert": 38.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Yaxel Lendeborg",
+    "POS": "PF",
+    "lane": 10.82,
+    "shuttle": 2.8,
+    "sprint": 3.35,
+    "standing": 25.5,
+    "maxvert": 32.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Trevon Brazile",
+    "POS": "PF",
+    "lane": 10.84,
+    "shuttle": 2.71,
+    "sprint": 3.14,
+    "standing": 36.0,
+    "maxvert": 41.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Christian Anderson",
+    "POS": "PG",
+    "lane": 10.85,
+    "shuttle": 2.85,
+    "sprint": 3.18,
+    "standing": 31.0,
+    "maxvert": 40.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tyler Nickel",
+    "POS": "SF",
+    "lane": 10.88,
+    "shuttle": 2.85,
+    "sprint": 3.35,
+    "standing": 26.0,
+    "maxvert": 34.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tyler Tanner",
+    "POS": "PG",
+    "lane": 10.88,
+    "shuttle": 2.92,
+    "sprint": 3.23,
+    "standing": 32.0,
+    "maxvert": 39.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Hannes Steinbach",
+    "POS": "C",
+    "lane": 10.9,
+    "shuttle": 2.89,
+    "sprint": 3.38,
+    "standing": 30.0,
+    "maxvert": 35.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tobe Awaka",
+    "POS": "C",
+    "lane": 10.94,
+    "shuttle": 3.02,
+    "sprint": 3.19,
+    "standing": 32.5,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Ja'Kobi Gillespie",
+    "POS": "PG",
+    "lane": 10.94,
+    "shuttle": 2.91,
+    "sprint": 3.12,
+    "standing": 31.5,
+    "maxvert": 39.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Dillon Mitchell",
+    "POS": "PF",
+    "lane": 10.94,
+    "shuttle": 2.89,
+    "sprint": 3.19,
+    "standing": 32.5,
+    "maxvert": 38.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Andrej Stojakovic",
+    "POS": "SF",
+    "lane": 10.97,
+    "shuttle": 2.89,
+    "sprint": 3.32,
+    "standing": 32.0,
+    "maxvert": 41.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Darius Acuff Jr.",
+    "POS": "PG",
+    "lane": 10.99,
+    "shuttle": 2.93,
+    "sprint": 3.06,
+    "standing": 31.5,
+    "maxvert": 36.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Koa Peat",
+    "POS": "PF",
+    "lane": 11.0,
+    "shuttle": 3.39,
+    "sprint": 3.16,
+    "standing": 34.5,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Nick Martinelli",
+    "POS": "PF",
+    "lane": 11.01,
+    "shuttle": 2.88,
+    "sprint": 3.48,
+    "standing": 26.5,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Felix Okpara",
+    "POS": "C",
+    "lane": 11.01,
+    "shuttle": 2.99,
+    "sprint": 3.18,
+    "standing": 29.5,
+    "maxvert": 34.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tarris Reed Jr.",
+    "POS": "C",
+    "lane": 11.03,
+    "shuttle": 2.77,
+    "sprint": 3.3,
+    "standing": 29.5,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Zuby Ejiofor",
+    "POS": "C",
+    "lane": 11.05,
+    "shuttle": 2.76,
+    "sprint": 3.2,
+    "standing": 34.0,
+    "maxvert": 38.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Keaton Wagler",
+    "POS": "PG",
+    "lane": 11.05,
+    "shuttle": 3.0,
+    "sprint": 3.27,
+    "standing": 33.0,
+    "maxvert": 36.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Cameron Boozer",
+    "POS": "PF",
+    "lane": 11.06,
+    "shuttle": 2.99,
+    "sprint": 3.31,
+    "standing": 28.5,
+    "maxvert": 35.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Anicet Dybantsa",
+    "POS": "SF",
+    "lane": 11.06,
+    "shuttle": 2.99,
+    "sprint": 3.14,
+    "standing": 33.5,
+    "maxvert": 42.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Trey Kaufman-Renn",
+    "POS": "PF",
+    "lane": 11.06,
+    "shuttle": 3.01,
+    "sprint": 3.37,
+    "standing": 29.0,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Matthew Able",
+    "POS": "SG",
+    "lane": 11.08,
+    "shuttle": 2.86,
+    "sprint": 3.29,
+    "standing": 27.5,
+    "maxvert": 34.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tounde Yessoufou",
+    "POS": "SG",
+    "lane": 11.09,
+    "shuttle": 2.75,
+    "sprint": 3.17,
+    "standing": 34.0,
+    "maxvert": 38.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Karim Lopez",
+    "POS": "PF",
+    "lane": 11.14,
+    "shuttle": 2.88,
+    "sprint": 3.32,
+    "standing": 32.0,
+    "maxvert": 38.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Keyshawn Hall",
+    "POS": "SF",
+    "lane": 11.15,
+    "shuttle": 3.1,
+    "sprint": 3.25,
+    "standing": 30.0,
+    "maxvert": 34.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tobi Lawal",
+    "POS": "PF",
+    "lane": 11.15,
+    "shuttle": 3.08,
+    "sprint": 3.16,
+    "standing": 40.0,
+    "maxvert": 45.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Darryn Peterson",
+    "POS": "SG",
+    "lane": 11.17,
+    "shuttle": 2.95,
+    "sprint": 3.16,
+    "standing": 31.5,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Caleb Wilson",
+    "POS": "PF",
+    "lane": 11.17,
+    "shuttle": 3.11,
+    "sprint": 3.23,
+    "standing": 34.5,
+    "maxvert": 39.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Aaron Nkrumah",
+    "POS": "SG",
+    "lane": 11.18,
+    "shuttle": 2.48,
+    "sprint": 3.24,
+    "standing": 28.5,
+    "maxvert": 35.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Alex Karaban",
+    "POS": "PF",
+    "lane": 11.19,
+    "shuttle": 3.01,
+    "sprint": 3.28,
+    "standing": 28.0,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Otega Oweh",
+    "POS": "SG",
+    "lane": 11.2,
+    "shuttle": 2.86,
+    "sprint": 3.17,
+    "standing": 31.0,
+    "maxvert": 37.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Henri Veesaar",
+    "POS": "C",
+    "lane": 11.2,
+    "shuttle": 2.92,
+    "sprint": 3.42,
+    "standing": 28.0,
+    "maxvert": 32.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Rueben Chinyelu",
+    "POS": "C",
+    "lane": 11.21,
+    "shuttle": 2.85,
+    "sprint": 3.25,
+    "standing": 30.5,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Maliq Brown",
+    "POS": "C",
+    "lane": 11.22,
+    "shuttle": 3.05,
+    "sprint": 3.07,
+    "standing": 29.5,
+    "maxvert": 34.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Milan Momcilovic",
+    "POS": "PF",
+    "lane": 11.22,
+    "shuttle": 2.95,
+    "sprint": 3.47,
+    "standing": 27.5,
+    "maxvert": 32.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Izaiyah Nelson",
+    "POS": "C",
+    "lane": 11.22,
+    "shuttle": 2.9,
+    "sprint": 3.2,
+    "standing": 32.5,
+    "maxvert": 38.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "John Blackwell",
+    "POS": "SG",
+    "lane": 11.23,
+    "shuttle": 3.08,
+    "sprint": 3.17,
+    "standing": 28.0,
+    "maxvert": 35.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Peter Suder",
+    "POS": "SG",
+    "lane": 11.23,
+    "shuttle": 3.14,
+    "sprint": 3.2,
+    "standing": 28.5,
+    "maxvert": 30.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Flory Bidunga",
+    "POS": "C",
+    "lane": 11.24,
+    "shuttle": 2.78,
+    "sprint": 3.19,
+    "standing": 34.0,
+    "maxvert": 40.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Bennett Stirtz",
+    "POS": "PG",
+    "lane": 11.25,
+    "shuttle": 2.91,
+    "sprint": 3.17,
+    "standing": 30.5,
+    "maxvert": 37.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Dailyn Swain",
+    "POS": "SF",
+    "lane": 11.25,
+    "shuttle": 3.08,
+    "sprint": 3.21,
+    "standing": 28.0,
+    "maxvert": 36.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Nathaniel Ament",
+    "POS": "PF",
+    "lane": 11.27,
+    "shuttle": 2.85,
+    "sprint": 3.26,
+    "standing": 31.0,
+    "maxvert": 37.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jacob Cofie",
+    "POS": "PF",
+    "lane": 11.3,
+    "shuttle": 2.92,
+    "sprint": 3.07,
+    "standing": 29.5,
+    "maxvert": 36.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Rafael Castro",
+    "POS": "C",
+    "lane": 11.42,
+    "shuttle": 2.93,
+    "sprint": 3.2,
+    "standing": 31.0,
+    "maxvert": 36.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Aday Mara",
+    "POS": "C",
+    "lane": 11.47,
+    "shuttle": 3.36,
+    "sprint": 3.61,
+    "standing": 24.0,
+    "maxvert": 28.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Labaron Philon",
+    "POS": "PG",
+    "lane": 11.55,
+    "shuttle": 3.13,
+    "sprint": 3.09,
+    "standing": 30.5,
+    "maxvert": 35.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Bruce Thornton",
+    "POS": "PG",
+    "lane": 11.55,
+    "shuttle": 3.01,
+    "sprint": 3.25,
+    "standing": 29.5,
+    "maxvert": 35.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Ugonna Onyenso",
+    "POS": "C",
+    "lane": 11.56,
+    "shuttle": 3.16,
+    "sprint": 3.25,
+    "standing": 27.0,
+    "maxvert": 32.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Meleek Thomas",
+    "POS": "SG",
+    "lane": 11.57,
+    "shuttle": 2.97,
+    "sprint": 3.22,
+    "standing": 31.5,
+    "maxvert": 38.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Malachi Moreno",
+    "POS": "C",
+    "lane": 11.62,
+    "shuttle": 3.11,
+    "sprint": 3.52,
+    "standing": 25.5,
+    "maxvert": 29.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Allen Graves",
+    "POS": "PF",
+    "lane": 11.76,
+    "shuttle": 3.18,
+    "sprint": 3.44,
+    "standing": 27.5,
+    "maxvert": 34.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Isaiah Evans",
+    "POS": "SG",
+    "lane": 11.87,
+    "shuttle": 2.89,
+    "sprint": 3.18,
+    "standing": 27.0,
+    "maxvert": 35.5,
+    "bench": null
+  },
+  {
+    "PLAYER": "Joshua Jefferson",
+    "POS": "PF",
+    "lane": 11.91,
+    "shuttle": 3.08,
+    "sprint": 3.42,
+    "standing": 27.0,
+    "maxvert": 33.0,
+    "bench": null
+  },
+  {
+    "PLAYER": "Tyler Bilodeau",
+    "POS": "PF",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Sergio De Larrea",
+    "POS": "PG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jaden Harris",
+    "POS": "SF",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jack Kayil",
+    "POS": "PG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Jayden Quaintance",
+    "POS": "C",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Richie Saunders",
+    "POS": "SG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  },
+  {
+    "PLAYER": "Luigi Suigo",
+    "POS": "C",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null
+  }
+];
+
+    const metrics = {
+      lane:     { label: "Lane Agility Time", unit: "sec", better: "asc", digits: 2 },
+      shuttle:  { label: "Shuttle Run", unit: "sec", better: "asc", digits: 2 },
+      sprint:   { label: "Three Quarter Sprint", unit: "sec", better: "asc", digits: 2 },
+      standing: { label: "Standing Vertical Leap", unit: "in", better: "desc", digits: 1 },
+      maxvert:  { label: "Max Vertical Leap", unit: "in", better: "desc", digits: 1 },
+      bench:    { label: "Max Bench Press", unit: "reps", better: "desc", digits: 0 }
+    };
+
+    let state = {
+      sortKey: "lane",
+      sortType: "number",
+      sortDir: "asc",
+      rankMetric: "lane",
+      playerFilter: "",
+      positionFilter: ""
+    };
+
+    const tbody = document.querySelector("#combineTable tbody");
+    const rankMetricSelect = document.querySelector("#rankMetric");
+    const playerSearch = document.querySelector("#playerSearch");
+    const positionFilter = document.querySelector("#positionFilter");
+    const summary = document.querySelector("#summary");
+
+    Object.entries(metrics).forEach(([key, meta]) => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = meta.label;
+      rankMetricSelect.appendChild(opt);
+    });
+    rankMetricSelect.value = state.rankMetric;
+
+    function formatValue(value, key) {
+      if (value === null || value === undefined || value === "") return "-";
+      if (metrics[key]) return Number(value).toFixed(metrics[key].digits);
+      return String(value);
+    }
+
+    function getRanks(rows, key) {
+      const meta = metrics[key];
+      if (!meta) return new Map();
+
+      const valid = rows
+        .filter(row => Number.isFinite(row[key]))
+        .sort((a, b) => meta.better === "asc" ? a[key] - b[key] : b[key] - a[key]);
+
+      const ranks = new Map();
+      let previousValue;
+      let currentRank = 0;
+
+      valid.forEach((row, index) => {
+        if (index === 0 || row[key] !== previousValue) {
+          currentRank = index + 1;
+          previousValue = row[key];
+        }
+        ranks.set(row.PLAYER + "|" + row.POS, currentRank);
+      });
+
+      return ranks;
+    }
+
+    function matchesPosition(rowPosition, filterValue) {
+      if (!filterValue) return true;
+      if (filterValue === "G") return rowPosition === "PG" || rowPosition === "SG";
+      if (filterValue === "F") return rowPosition === "SF" || rowPosition === "PF";
+      return rowPosition === filterValue;
+    }
+
+    function filteredData() {
+      const playerTerm = state.playerFilter.trim().toLowerCase();
+      const posTerm = state.positionFilter;
+
+      return data.filter(row => {
+        const playerMatch = !playerTerm || row.PLAYER.toLowerCase().includes(playerTerm);
+        const positionMatch = matchesPosition(row.POS, posTerm);
+        return playerMatch && positionMatch;
+      });
+    }
+
+    function sortRows(rows) {
+      const { sortKey, sortType, sortDir } = state;
+      const direction = sortDir === "asc" ? 1 : -1;
+
+      return rows.sort((a, b) => {
+        const av = a[sortKey];
+        const bv = b[sortKey];
+
+        if (sortType === "number") {
+          const aMissing = !Number.isFinite(av);
+          const bMissing = !Number.isFinite(bv);
+          if (aMissing && bMissing) return a.PLAYER.localeCompare(b.PLAYER);
+          if (aMissing) return 1;
+          if (bMissing) return -1;
+          if (av !== bv) return (av - bv) * direction;
+          return a.PLAYER.localeCompare(b.PLAYER);
+        }
+
+        return String(av).localeCompare(String(bv)) * direction || a.PLAYER.localeCompare(b.PLAYER);
+      });
+    }
+
+    function render() {
+      const rows = sortRows(filteredData());
+      const ranks = getRanks(data, state.rankMetric);
+      tbody.innerHTML = "";
+
+      rows.forEach(row => {
+        const tr = document.createElement("tr");
+        const rank = ranks.get(row.PLAYER + "|" + row.POS) || "";
+        tr.innerHTML = `
+          <td class="num rank-cell">${rank}</td>
+          <td>${row.PLAYER}</td>
+          <td>${row.POS}</td>
+          <td class="num ${row.lane === null ? "missing" : ""}">${formatValue(row.lane, "lane")}</td>
+          <td class="num ${row.shuttle === null ? "missing" : ""}">${formatValue(row.shuttle, "shuttle")}</td>
+          <td class="num ${row.sprint === null ? "missing" : ""}">${formatValue(row.sprint, "sprint")}</td>
+          <td class="num ${row.standing === null ? "missing" : ""}">${formatValue(row.standing, "standing")}</td>
+          <td class="num ${row.maxvert === null ? "missing" : ""}">${formatValue(row.maxvert, "maxvert")}</td>
+          <td class="num ${row.bench === null ? "missing" : ""}">${formatValue(row.bench, "bench")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll("th.sortable").forEach(th => {
+        th.classList.remove("sorted-asc", "sorted-desc");
+        if (th.dataset.key === state.sortKey) th.classList.add(`sorted-${state.sortDir}`);
+      });
+
+      const total = data.length;
+      const shown = rows.length;
+      const metricLabel = metrics[state.rankMetric].label;
+      summary.textContent = `Showing ${shown} of ${total} players. Rank is currently based on ${metricLabel}.`;
+    }
+
+    document.querySelectorAll("th.sortable").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        const type = th.dataset.type;
+
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          state.sortKey = key;
+          state.sortType = type;
+          if (metrics[key]) {
+            state.sortDir = metrics[key].better;
+            state.rankMetric = key;
+            rankMetricSelect.value = key;
+          } else {
+            state.sortDir = "asc";
+          }
+        }
+
+        render();
+      });
+    });
+
+    rankMetricSelect.addEventListener("change", event => {
+      state.rankMetric = event.target.value;
+      render();
+    });
+
+    playerSearch.addEventListener("input", event => {
+      state.playerFilter = event.target.value;
+      render();
+    });
+
+    positionFilter.addEventListener("change", event => {
+      state.positionFilter = event.target.value;
+      render();
+    });
+
+    document.querySelector("#reset").addEventListener("click", () => {
+      state = {
+        sortKey: "lane",
+        sortType: "number",
+        sortDir: "asc",
+        rankMetric: "lane",
+        playerFilter: "",
+        positionFilter: ""
+      };
+      rankMetricSelect.value = state.rankMetric;
+      playerSearch.value = "";
+      positionFilter.value = "";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

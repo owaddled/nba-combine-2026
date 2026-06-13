@@ -1,0 +1,1798 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NBA Draft Combine Athletic Testing and Measurements Table</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d7dce2;
+      --header: #eef2f6;
+      --accent: #2563eb;
+      --row-alt: #fafafa;
+      --column-highlight: #eaf2ff;
+      --row-highlight: #fff3bf;
+      --row-column-highlight: #ffe69c;
+      --sticky-shadow: rgba(31, 41, 55, .12);
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.35rem, 2vw, 2rem);
+    }
+
+    .note {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+      padding: 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    select, input {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    button {
+      font: inherit;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    button:hover, th.sortable:hover {
+      border-color: var(--accent);
+    }
+
+    .table-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1620px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--header);
+      font-size: .86rem;
+      line-height: 1.2;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    th.sorted-column,
+    td.sorted-column {
+      background: var(--column-highlight);
+    }
+
+    tbody tr.selected-row td {
+      background: var(--row-highlight);
+    }
+
+    tbody tr.selected-row td.sorted-column {
+      background: var(--row-column-highlight);
+    }
+
+    th.player-sticky,
+    td.player-sticky {
+      position: sticky;
+      left: 0;
+      min-width: 190px;
+      max-width: 240px;
+      white-space: normal;
+      box-shadow: 2px 0 6px var(--sticky-shadow);
+    }
+
+    thead th.player-sticky {
+      z-index: 5;
+      background: var(--header);
+    }
+
+    tbody td.player-sticky {
+      z-index: 2;
+      background: var(--panel);
+      font-weight: 650;
+    }
+
+    tbody tr:nth-child(even) td.player-sticky {
+      background: var(--row-alt);
+    }
+
+    tbody tr.selected-row td.player-sticky {
+      background: var(--row-highlight);
+    }
+
+    tbody tr.selected-row td.player-sticky.sorted-column {
+      background: var(--row-column-highlight);
+    }
+
+    thead th.player-sticky.sorted-column {
+      background: var(--column-highlight);
+    }
+
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable::after {
+      content: " ↕";
+      color: var(--muted);
+      font-weight: normal;
+    }
+
+    th.sorted-asc::after {
+      content: " ↑";
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: " ↓";
+      color: var(--accent);
+    }
+
+    .rank-cell {
+      font-weight: 700;
+    }
+
+    .overall-rank {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 500;
+    }
+
+    .missing {
+      color: var(--muted);
+    }
+
+    .summary {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Combine Athletic Testing and Measurements Table</h1>
+    <p class="note">
+      Click any column header to sort. The sorted column is highlighted, and clicking a player row highlights that row; click the same row again to clear it. The Player column stays frozen while the rest of the table scrolls horizontally. The Rank column uses competition ranking, so ties share a rank and the next rank skips ahead, like 1, 2, 2, 4. When filters are active, the main rank is recalculated within the filtered players and the overall rank is shown underneath in parentheses. Use the separate player and position filters to avoid position terms matching player names. For time columns, lower is better. For jumps, bench, and measurement columns, higher values rank first. Missing values are unranked and sort to the bottom. Body fat and height with shoes were omitted because no usable values were provided.
+    </p>
+
+    <section class="controls" aria-label="Table controls">
+      <label>
+        Rank by
+        <select id="rankMetric"></select>
+      </label>
+      <label>
+        Filter player names
+        <input id="playerSearch" type="search" placeholder="e.g. Boozer" />
+      </label>
+      <label>
+        Filter position
+        <select id="positionFilter">
+          <option value="">All positions</option>
+          <option value="G">All guards, G</option>
+          <option value="F">All forwards, F</option>
+          <option value="PG">PG</option>
+          <option value="SG">SG</option>
+          <option value="SF">SF</option>
+          <option value="PF">PF</option>
+          <option value="C">C</option>
+        </select>
+      </label>
+      <button id="reset" type="button">Reset</button>
+    </section>
+
+    <div class="table-scroll">
+      <table id="combineTable">
+        <thead>
+          <tr>
+            <th class="num">Rank<br><span style="font-weight:400;color:var(--muted);">Overall shown when filtered</span></th>
+            <th class="sortable player-sticky" data-key="PLAYER" data-type="string">Player</th>
+            <th class="sortable" data-key="POS" data-type="string">Pos</th>
+            <th class="sortable num" data-key="lane" data-type="number">Lane Agility<br>(sec)</th>
+            <th class="sortable num" data-key="shuttle" data-type="number">Shuttle Run<br>(sec)</th>
+            <th class="sortable num" data-key="sprint" data-type="number">3/4 Sprint<br>(sec)</th>
+            <th class="sortable num" data-key="standing" data-type="number">Standing Vert<br>(in)</th>
+            <th class="sortable num" data-key="maxvert" data-type="number">Max Vert<br>(in)</th>
+            <th class="sortable num" data-key="bench" data-type="number">Bench Press<br>(reps)</th>
+            <th class="sortable num" data-key="handLength" data-type="number">Hand Length<br>(in)</th>
+            <th class="sortable num" data-key="handWidth" data-type="number">Hand Width<br>(in)</th>
+            <th class="sortable num" data-key="heightNoShoes" data-type="number">Height<br>w/o Shoes</th>
+            <th class="sortable num" data-key="standingReach" data-type="number">Standing<br>Reach</th>
+            <th class="sortable num" data-key="weight" data-type="number">Weight<br>(lbs)</th>
+            <th class="sortable num" data-key="wingspan" data-type="number">Wingspan</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <p id="summary" class="summary"></p>
+  </main>
+
+  <script>
+    const data = [
+  {
+    "PLAYER": "Billy Richmond III",
+    "POS": "SF",
+    "lane": 10.23,
+    "shuttle": 2.82,
+    "sprint": 3.06,
+    "standing": 32.5,
+    "maxvert": 41.0,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.25,
+    "heightNoShoes": 77.75,
+    "standingReach": 101.0,
+    "weight": 195.4,
+    "wingspan": 80.0
+  },
+  {
+    "PLAYER": "Cameron Carr",
+    "POS": "SG",
+    "lane": 10.46,
+    "shuttle": 2.8,
+    "sprint": 3.17,
+    "standing": 38.0,
+    "maxvert": 42.5,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.25,
+    "heightNoShoes": 76.5,
+    "standingReach": 104.0,
+    "weight": 184.4,
+    "wingspan": 84.75
+  },
+  {
+    "PLAYER": "Christopher Brown Jr",
+    "POS": "PG",
+    "lane": 10.57,
+    "shuttle": 2.89,
+    "sprint": 3.24,
+    "standing": 33.5,
+    "maxvert": 39.5,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 9.5,
+    "heightNoShoes": 75.5,
+    "standingReach": 100.5,
+    "weight": 190.2,
+    "wingspan": 79.5
+  },
+  {
+    "PLAYER": "Brayden Burries",
+    "POS": "SG",
+    "lane": 10.59,
+    "shuttle": 2.92,
+    "sprint": 3.21,
+    "standing": 35.0,
+    "maxvert": 38.5,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 9.25,
+    "heightNoShoes": 75.75,
+    "standingReach": 98.5,
+    "weight": 215.4,
+    "wingspan": 78.0
+  },
+  {
+    "PLAYER": "Morez Johnson",
+    "POS": "PF",
+    "lane": 10.59,
+    "shuttle": 2.91,
+    "sprint": 3.17,
+    "standing": 33.5,
+    "maxvert": 39.0,
+    "bench": null,
+    "handLength": 9.5,
+    "handWidth": 10.0,
+    "heightNoShoes": 81.0,
+    "standingReach": 107.0,
+    "weight": 250.6,
+    "wingspan": 87.5
+  },
+  {
+    "PLAYER": "Kingston Flemings",
+    "POS": "PG",
+    "lane": 10.61,
+    "shuttle": 2.69,
+    "sprint": 3.07,
+    "standing": 33.5,
+    "maxvert": 40.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.5,
+    "heightNoShoes": 74.5,
+    "standingReach": 98.5,
+    "weight": 183.4,
+    "wingspan": 75.5
+  },
+  {
+    "PLAYER": "Jeremy Fears Jr.",
+    "POS": "PG",
+    "lane": 10.62,
+    "shuttle": 3.1,
+    "sprint": 3.11,
+    "standing": 32.0,
+    "maxvert": 39.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.0,
+    "heightNoShoes": 72.0,
+    "standingReach": 97.5,
+    "weight": 196.2,
+    "wingspan": 76.0
+  },
+  {
+    "PLAYER": "Ryan Conwell",
+    "POS": "SG",
+    "lane": 10.69,
+    "shuttle": 2.86,
+    "sprint": 3.21,
+    "standing": 32.5,
+    "maxvert": 39.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 74.0,
+    "standingReach": 96.5,
+    "weight": 214.8,
+    "wingspan": 79.0
+  },
+  {
+    "PLAYER": "Milos Uzan",
+    "POS": "PG",
+    "lane": 10.7,
+    "shuttle": 2.87,
+    "sprint": 3.21,
+    "standing": 28.0,
+    "maxvert": 35.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.0,
+    "heightNoShoes": 75.0,
+    "standingReach": 98.0,
+    "weight": 185.0,
+    "wingspan": 77.0
+  },
+  {
+    "PLAYER": "Bryce Hopkins",
+    "POS": "PF",
+    "lane": 10.71,
+    "shuttle": 2.95,
+    "sprint": 3.26,
+    "standing": 30.0,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 10.0,
+    "heightNoShoes": 78.0,
+    "standingReach": 105.0,
+    "weight": 218.8,
+    "wingspan": 82.5
+  },
+  {
+    "PLAYER": "Baba Miller",
+    "POS": "PF",
+    "lane": 10.71,
+    "shuttle": 2.7,
+    "sprint": 3.23,
+    "standing": 31.5,
+    "maxvert": 34.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.0,
+    "heightNoShoes": 82.5,
+    "standingReach": 111.0,
+    "weight": 208.2,
+    "wingspan": 85.75
+  },
+  {
+    "PLAYER": "Ebuka Okorie",
+    "POS": "PG",
+    "lane": 10.71,
+    "shuttle": 2.96,
+    "sprint": 3.26,
+    "standing": 31.5,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.25,
+    "heightNoShoes": 73.25,
+    "standingReach": 98.0,
+    "weight": 186.0,
+    "wingspan": 79.75
+  },
+  {
+    "PLAYER": "Amari Allen",
+    "POS": "SF",
+    "lane": 10.72,
+    "shuttle": 2.94,
+    "sprint": 3.19,
+    "standing": 34.5,
+    "maxvert": 42.5,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 9.25,
+    "heightNoShoes": 77.25,
+    "standingReach": 99.5,
+    "weight": 204.6,
+    "wingspan": 80.0
+  },
+  {
+    "PLAYER": "Jaden Bradley",
+    "POS": "PG",
+    "lane": 10.75,
+    "shuttle": 3.13,
+    "sprint": 3.2,
+    "standing": 30.5,
+    "maxvert": 36.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.25,
+    "heightNoShoes": 74.5,
+    "standingReach": 96.0,
+    "weight": 205.4,
+    "wingspan": 78.25
+  },
+  {
+    "PLAYER": "Christopher Cenac Jr.",
+    "POS": "PF",
+    "lane": 10.76,
+    "shuttle": 2.84,
+    "sprint": 3.27,
+    "standing": 33.0,
+    "maxvert": 37.0,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 9.5,
+    "heightNoShoes": 82.25,
+    "standingReach": 108.5,
+    "weight": 239.6,
+    "wingspan": 89.0
+  },
+  {
+    "PLAYER": "Braden Smith",
+    "POS": "PG",
+    "lane": 10.76,
+    "shuttle": 2.87,
+    "sprint": 3.23,
+    "standing": 31.0,
+    "maxvert": 38.5,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 8.25,
+    "heightNoShoes": 70.25,
+    "standingReach": 93.5,
+    "weight": 166.6,
+    "wingspan": 75.25
+  },
+  {
+    "PLAYER": "Emanuel Sharp",
+    "POS": "SG",
+    "lane": 10.77,
+    "shuttle": 2.8,
+    "sprint": 3.19,
+    "standing": 27.5,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 8.25,
+    "heightNoShoes": 74.75,
+    "standingReach": 98.5,
+    "weight": 208.4,
+    "wingspan": 75.0
+  },
+  {
+    "PLAYER": "Nicholas Boyd",
+    "POS": "PG",
+    "lane": 10.78,
+    "shuttle": 3.06,
+    "sprint": 3.07,
+    "standing": 30.5,
+    "maxvert": 36.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 8.25,
+    "heightNoShoes": 73.0,
+    "standingReach": 96.0,
+    "weight": 176.2,
+    "wingspan": 74.5
+  },
+  {
+    "PLAYER": "Kylan Boswell",
+    "POS": "PG",
+    "lane": 10.82,
+    "shuttle": 2.92,
+    "sprint": 3.22,
+    "standing": 33.0,
+    "maxvert": 38.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 8.5,
+    "heightNoShoes": 73.25,
+    "standingReach": 95.0,
+    "weight": 226.0,
+    "wingspan": 79.0
+  },
+  {
+    "PLAYER": "Yaxel Lendeborg",
+    "POS": "PF",
+    "lane": 10.82,
+    "shuttle": 2.8,
+    "sprint": 3.35,
+    "standing": 25.5,
+    "maxvert": 32.0,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.0,
+    "heightNoShoes": 80.75,
+    "standingReach": 108.5,
+    "weight": 241.4,
+    "wingspan": 87.25
+  },
+  {
+    "PLAYER": "Trevon Brazile",
+    "POS": "PF",
+    "lane": 10.84,
+    "shuttle": 2.71,
+    "sprint": 3.14,
+    "standing": 36.0,
+    "maxvert": 41.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.25,
+    "heightNoShoes": 81.5,
+    "standingReach": 109.0,
+    "weight": 225.6,
+    "wingspan": 87.75
+  },
+  {
+    "PLAYER": "Christian Anderson",
+    "POS": "PG",
+    "lane": 10.85,
+    "shuttle": 2.85,
+    "sprint": 3.18,
+    "standing": 31.0,
+    "maxvert": 40.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 8.25,
+    "heightNoShoes": 73.0,
+    "standingReach": 96.5,
+    "weight": 180.4,
+    "wingspan": 78.25
+  },
+  {
+    "PLAYER": "Tyler Nickel",
+    "POS": "SF",
+    "lane": 10.88,
+    "shuttle": 2.85,
+    "sprint": 3.35,
+    "standing": 26.0,
+    "maxvert": 34.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 10.0,
+    "heightNoShoes": 78.0,
+    "standingReach": 102.5,
+    "weight": 217.4,
+    "wingspan": 80.5
+  },
+  {
+    "PLAYER": "Tyler Tanner",
+    "POS": "PG",
+    "lane": 10.88,
+    "shuttle": 2.92,
+    "sprint": 3.23,
+    "standing": 32.0,
+    "maxvert": 39.0,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 10.0,
+    "heightNoShoes": 70.75,
+    "standingReach": 93.0,
+    "weight": 166.8,
+    "wingspan": 76.25
+  },
+  {
+    "PLAYER": "Hannes Steinbach",
+    "POS": "C",
+    "lane": 10.9,
+    "shuttle": 2.89,
+    "sprint": 3.38,
+    "standing": 30.0,
+    "maxvert": 35.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.0,
+    "heightNoShoes": 82.25,
+    "standingReach": 108.0,
+    "weight": 248.0,
+    "wingspan": 86.25
+  },
+  {
+    "PLAYER": "Tobe Awaka",
+    "POS": "C",
+    "lane": 10.94,
+    "shuttle": 3.02,
+    "sprint": 3.19,
+    "standing": 32.5,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 10.0,
+    "heightNoShoes": 80.0,
+    "standingReach": 105.0,
+    "weight": 261.4,
+    "wingspan": 86.25
+  },
+  {
+    "PLAYER": "Ja'Kobi Gillespie",
+    "POS": "PG",
+    "lane": 10.94,
+    "shuttle": 2.91,
+    "sprint": 3.12,
+    "standing": 31.5,
+    "maxvert": 39.5,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 71.75,
+    "standingReach": 95.5,
+    "weight": 181.8,
+    "wingspan": 76.0
+  },
+  {
+    "PLAYER": "Dillon Mitchell",
+    "POS": "PF",
+    "lane": 10.94,
+    "shuttle": 2.89,
+    "sprint": 3.19,
+    "standing": 32.5,
+    "maxvert": 38.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.75,
+    "heightNoShoes": 78.75,
+    "standingReach": 104.5,
+    "weight": 202.2,
+    "wingspan": 82.5
+  },
+  {
+    "PLAYER": "Andrej Stojakovic",
+    "POS": "SF",
+    "lane": 10.97,
+    "shuttle": 2.89,
+    "sprint": 3.32,
+    "standing": 32.0,
+    "maxvert": 41.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 10.0,
+    "heightNoShoes": 77.5,
+    "standingReach": 100.0,
+    "weight": 206.0,
+    "wingspan": 80.25
+  },
+  {
+    "PLAYER": "Darius Acuff Jr.",
+    "POS": "PG",
+    "lane": 10.99,
+    "shuttle": 2.93,
+    "sprint": 3.06,
+    "standing": 31.5,
+    "maxvert": 36.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.25,
+    "heightNoShoes": 74.0,
+    "standingReach": 98.5,
+    "weight": 185.8,
+    "wingspan": 78.5
+  },
+  {
+    "PLAYER": "Koa Peat",
+    "POS": "PF",
+    "lane": 11.0,
+    "shuttle": 3.39,
+    "sprint": 3.16,
+    "standing": 34.5,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.0,
+    "heightNoShoes": 79.0,
+    "standingReach": 104.0,
+    "weight": 245.0,
+    "wingspan": 83.25
+  },
+  {
+    "PLAYER": "Nick Martinelli",
+    "POS": "PF",
+    "lane": 11.01,
+    "shuttle": 2.88,
+    "sprint": 3.48,
+    "standing": 26.5,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.75,
+    "heightNoShoes": 78.5,
+    "standingReach": 104.5,
+    "weight": 223.6,
+    "wingspan": 82.0
+  },
+  {
+    "PLAYER": "Felix Okpara",
+    "POS": "C",
+    "lane": 11.01,
+    "shuttle": 2.99,
+    "sprint": 3.18,
+    "standing": 29.5,
+    "maxvert": 34.5,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.0,
+    "heightNoShoes": 82.0,
+    "standingReach": 112.0,
+    "weight": 237.4,
+    "wingspan": 86.0
+  },
+  {
+    "PLAYER": "Tarris Reed Jr.",
+    "POS": "C",
+    "lane": 11.03,
+    "shuttle": 2.77,
+    "sprint": 3.3,
+    "standing": 29.5,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 10.0,
+    "heightNoShoes": 81.75,
+    "standingReach": 110.0,
+    "weight": 263.6,
+    "wingspan": 88.25
+  },
+  {
+    "PLAYER": "Zuby Ejiofor",
+    "POS": "C",
+    "lane": 11.05,
+    "shuttle": 2.76,
+    "sprint": 3.2,
+    "standing": 34.0,
+    "maxvert": 38.0,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 9.75,
+    "heightNoShoes": 79.5,
+    "standingReach": 107.0,
+    "weight": 245.2,
+    "wingspan": 86.0
+  },
+  {
+    "PLAYER": "Keaton Wagler",
+    "POS": "PG",
+    "lane": 11.05,
+    "shuttle": 3.0,
+    "sprint": 3.27,
+    "standing": 33.0,
+    "maxvert": 36.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.25,
+    "heightNoShoes": 77.0,
+    "standingReach": 100.0,
+    "weight": 188.0,
+    "wingspan": 78.25
+  },
+  {
+    "PLAYER": "Cameron Boozer",
+    "POS": "PF",
+    "lane": 11.06,
+    "shuttle": 2.99,
+    "sprint": 3.31,
+    "standing": 28.5,
+    "maxvert": 35.0,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.75,
+    "heightNoShoes": 80.25,
+    "standingReach": 108.0,
+    "weight": 252.8,
+    "wingspan": 85.5
+  },
+  {
+    "PLAYER": "Anicet Dybantsa",
+    "POS": "SF",
+    "lane": 11.06,
+    "shuttle": 2.99,
+    "sprint": 3.14,
+    "standing": 33.5,
+    "maxvert": 42.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 80.5,
+    "standingReach": 106.0,
+    "weight": 217.0,
+    "wingspan": 84.5
+  },
+  {
+    "PLAYER": "Trey Kaufman-Renn",
+    "POS": "PF",
+    "lane": 11.06,
+    "shuttle": 3.01,
+    "sprint": 3.37,
+    "standing": 29.0,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.75,
+    "heightNoShoes": 79.75,
+    "standingReach": 105.5,
+    "weight": 241.2,
+    "wingspan": 82.5
+  },
+  {
+    "PLAYER": "Matthew Able",
+    "POS": "SG",
+    "lane": 11.08,
+    "shuttle": 2.86,
+    "sprint": 3.29,
+    "standing": 27.5,
+    "maxvert": 34.0,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 10.5,
+    "heightNoShoes": 75.75,
+    "standingReach": 103.0,
+    "weight": 195.8,
+    "wingspan": 80.25
+  },
+  {
+    "PLAYER": "Tounde Yessoufou",
+    "POS": "SG",
+    "lane": 11.09,
+    "shuttle": 2.75,
+    "sprint": 3.17,
+    "standing": 34.0,
+    "maxvert": 38.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 76.25,
+    "standingReach": 103.0,
+    "weight": 219.8,
+    "wingspan": 82.0
+  },
+  {
+    "PLAYER": "Karim Lopez",
+    "POS": "PF",
+    "lane": 11.14,
+    "shuttle": 2.88,
+    "sprint": 3.32,
+    "standing": 32.0,
+    "maxvert": 38.0,
+    "bench": null,
+    "handLength": 9.5,
+    "handWidth": 11.0,
+    "heightNoShoes": 80.25,
+    "standingReach": 105.5,
+    "weight": 221.8,
+    "wingspan": 83.5
+  },
+  {
+    "PLAYER": "Keyshawn Hall",
+    "POS": "SF",
+    "lane": 11.15,
+    "shuttle": 3.1,
+    "sprint": 3.25,
+    "standing": 30.0,
+    "maxvert": 34.0,
+    "bench": null,
+    "handLength": 9.5,
+    "handWidth": 9.75,
+    "heightNoShoes": 78.0,
+    "standingReach": 105.0,
+    "weight": 227.4,
+    "wingspan": 82.25
+  },
+  {
+    "PLAYER": "Tobi Lawal",
+    "POS": "PF",
+    "lane": 11.15,
+    "shuttle": 3.08,
+    "sprint": 3.16,
+    "standing": 40.0,
+    "maxvert": 45.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 79.25,
+    "standingReach": 104.5,
+    "weight": 214.4,
+    "wingspan": 82.5
+  },
+  {
+    "PLAYER": "Darryn Peterson",
+    "POS": "SG",
+    "lane": 11.17,
+    "shuttle": 2.95,
+    "sprint": 3.16,
+    "standing": 31.5,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.25,
+    "heightNoShoes": 76.5,
+    "standingReach": 103.0,
+    "weight": 198.8,
+    "wingspan": 81.75
+  },
+  {
+    "PLAYER": "Caleb Wilson",
+    "POS": "PF",
+    "lane": 11.17,
+    "shuttle": 3.11,
+    "sprint": 3.23,
+    "standing": 34.5,
+    "maxvert": 39.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.75,
+    "heightNoShoes": 81.25,
+    "standingReach": 108.0,
+    "weight": 210.8,
+    "wingspan": 84.25
+  },
+  {
+    "PLAYER": "Aaron Nkrumah",
+    "POS": "SG",
+    "lane": 11.18,
+    "shuttle": 2.48,
+    "sprint": 3.24,
+    "standing": 28.5,
+    "maxvert": 35.0,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 8.5,
+    "heightNoShoes": 77.0,
+    "standingReach": 104.0,
+    "weight": 188.8,
+    "wingspan": 82.25
+  },
+  {
+    "PLAYER": "Alex Karaban",
+    "POS": "PF",
+    "lane": 11.19,
+    "shuttle": 3.01,
+    "sprint": 3.28,
+    "standing": 28.0,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.5,
+    "heightNoShoes": 78.75,
+    "standingReach": 104.5,
+    "weight": 225.2,
+    "wingspan": 83.0
+  },
+  {
+    "PLAYER": "Otega Oweh",
+    "POS": "SG",
+    "lane": 11.2,
+    "shuttle": 2.86,
+    "sprint": 3.17,
+    "standing": 31.0,
+    "maxvert": 37.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 76.25,
+    "standingReach": 101.0,
+    "weight": 216.0,
+    "wingspan": 80.25
+  },
+  {
+    "PLAYER": "Henri Veesaar",
+    "POS": "C",
+    "lane": 11.2,
+    "shuttle": 2.92,
+    "sprint": 3.42,
+    "standing": 28.0,
+    "maxvert": 32.5,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.5,
+    "heightNoShoes": 83.25,
+    "standingReach": 111.0,
+    "weight": 227.2,
+    "wingspan": 86.0
+  },
+  {
+    "PLAYER": "Rueben Chinyelu",
+    "POS": "C",
+    "lane": 11.21,
+    "shuttle": 2.85,
+    "sprint": 3.25,
+    "standing": 30.5,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 10.0,
+    "handWidth": 10.25,
+    "heightNoShoes": 81.25,
+    "standingReach": 111.5,
+    "weight": 259.4,
+    "wingspan": 91.5
+  },
+  {
+    "PLAYER": "Maliq Brown",
+    "POS": "C",
+    "lane": 11.22,
+    "shuttle": 3.05,
+    "sprint": 3.07,
+    "standing": 29.5,
+    "maxvert": 34.0,
+    "bench": null,
+    "handLength": 8.75,
+    "handWidth": 9.0,
+    "heightNoShoes": 80.0,
+    "standingReach": 107.0,
+    "weight": 216.6,
+    "wingspan": 84.75
+  },
+  {
+    "PLAYER": "Milan Momcilovic",
+    "POS": "PF",
+    "lane": 11.22,
+    "shuttle": 2.95,
+    "sprint": 3.47,
+    "standing": 27.5,
+    "maxvert": 32.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 80.0,
+    "standingReach": 102.5,
+    "weight": 218.2,
+    "wingspan": 81.25
+  },
+  {
+    "PLAYER": "Izaiyah Nelson",
+    "POS": "C",
+    "lane": 11.22,
+    "shuttle": 2.9,
+    "sprint": 3.2,
+    "standing": 32.5,
+    "maxvert": 38.5,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 9.5,
+    "heightNoShoes": 80.25,
+    "standingReach": 108.0,
+    "weight": 219.4,
+    "wingspan": 86.5
+  },
+  {
+    "PLAYER": "John Blackwell",
+    "POS": "SG",
+    "lane": 11.23,
+    "shuttle": 3.08,
+    "sprint": 3.17,
+    "standing": 28.0,
+    "maxvert": 35.5,
+    "bench": null,
+    "handLength": 8.25,
+    "handWidth": 9.5,
+    "heightNoShoes": 75.25,
+    "standingReach": 98.0,
+    "weight": 199.6,
+    "wingspan": 74.25
+  },
+  {
+    "PLAYER": "Peter Suder",
+    "POS": "SG",
+    "lane": 11.23,
+    "shuttle": 3.14,
+    "sprint": 3.2,
+    "standing": 28.5,
+    "maxvert": 30.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 75.75,
+    "standingReach": 99.5,
+    "weight": 213.4,
+    "wingspan": 80.0
+  },
+  {
+    "PLAYER": "Flory Bidunga",
+    "POS": "C",
+    "lane": 11.24,
+    "shuttle": 2.78,
+    "sprint": 3.19,
+    "standing": 34.0,
+    "maxvert": 40.5,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 10.5,
+    "heightNoShoes": 79.75,
+    "standingReach": 106.5,
+    "weight": 228.6,
+    "wingspan": 87.25
+  },
+  {
+    "PLAYER": "Bennett Stirtz",
+    "POS": "PG",
+    "lane": 11.25,
+    "shuttle": 2.91,
+    "sprint": 3.17,
+    "standing": 30.5,
+    "maxvert": 37.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.75,
+    "heightNoShoes": 74.5,
+    "standingReach": 98.5,
+    "weight": 186.2,
+    "wingspan": 78.0
+  },
+  {
+    "PLAYER": "Dailyn Swain",
+    "POS": "SF",
+    "lane": 11.25,
+    "shuttle": 3.08,
+    "sprint": 3.21,
+    "standing": 28.0,
+    "maxvert": 36.5,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 9.25,
+    "heightNoShoes": 78.5,
+    "standingReach": 104.5,
+    "weight": 211.2,
+    "wingspan": 82.0
+  },
+  {
+    "PLAYER": "Nathaniel Ament",
+    "POS": "PF",
+    "lane": 11.27,
+    "shuttle": 2.85,
+    "sprint": 3.26,
+    "standing": 31.0,
+    "maxvert": 37.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.5,
+    "heightNoShoes": 81.5,
+    "standingReach": 109.5,
+    "weight": 210.8,
+    "wingspan": 83.5
+  },
+  {
+    "PLAYER": "Jacob Cofie",
+    "POS": "PF",
+    "lane": 11.3,
+    "shuttle": 2.92,
+    "sprint": 3.07,
+    "standing": 29.5,
+    "maxvert": 36.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.5,
+    "heightNoShoes": 80.5,
+    "standingReach": 107.0,
+    "weight": 232.0,
+    "wingspan": 84.0
+  },
+  {
+    "PLAYER": "Rafael Castro",
+    "POS": "C",
+    "lane": 11.42,
+    "shuttle": 2.93,
+    "sprint": 3.2,
+    "standing": 31.0,
+    "maxvert": 36.5,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.0,
+    "heightNoShoes": 81.0,
+    "standingReach": 109.5,
+    "weight": 224.4,
+    "wingspan": 85.25
+  },
+  {
+    "PLAYER": "Aday Mara",
+    "POS": "C",
+    "lane": 11.47,
+    "shuttle": 3.36,
+    "sprint": 3.61,
+    "standing": 24.0,
+    "maxvert": 28.0,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 87.0,
+    "standingReach": 117.0,
+    "weight": 259.8,
+    "wingspan": 90.0
+  },
+  {
+    "PLAYER": "Labaron Philon",
+    "POS": "PG",
+    "lane": 11.55,
+    "shuttle": 3.13,
+    "sprint": 3.09,
+    "standing": 30.5,
+    "maxvert": 35.0,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 74.5,
+    "standingReach": 99.5,
+    "weight": 176.2,
+    "wingspan": 78.25
+  },
+  {
+    "PLAYER": "Bruce Thornton",
+    "POS": "PG",
+    "lane": 11.55,
+    "shuttle": 3.01,
+    "sprint": 3.25,
+    "standing": 29.5,
+    "maxvert": 35.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 72.0,
+    "standingReach": 96.5,
+    "weight": 223.0,
+    "wingspan": 77.0
+  },
+  {
+    "PLAYER": "Ugonna Onyenso",
+    "POS": "C",
+    "lane": 11.56,
+    "shuttle": 3.16,
+    "sprint": 3.25,
+    "standing": 27.0,
+    "maxvert": 32.0,
+    "bench": null,
+    "handLength": 9.5,
+    "handWidth": 10.0,
+    "heightNoShoes": 83.0,
+    "standingReach": 113.0,
+    "weight": 236.8,
+    "wingspan": 88.75
+  },
+  {
+    "PLAYER": "Meleek Thomas",
+    "POS": "SG",
+    "lane": 11.57,
+    "shuttle": 2.97,
+    "sprint": 3.22,
+    "standing": 31.5,
+    "maxvert": 38.0,
+    "bench": null,
+    "handLength": 8.0,
+    "handWidth": 7.5,
+    "heightNoShoes": 75.0,
+    "standingReach": 100.0,
+    "weight": 189.6,
+    "wingspan": 78.75
+  },
+  {
+    "PLAYER": "Malachi Moreno",
+    "POS": "C",
+    "lane": 11.62,
+    "shuttle": 3.11,
+    "sprint": 3.52,
+    "standing": 25.5,
+    "maxvert": 29.0,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 9.25,
+    "heightNoShoes": 83.25,
+    "standingReach": 111.5,
+    "weight": 242.8,
+    "wingspan": 85.5
+  },
+  {
+    "PLAYER": "Allen Graves",
+    "POS": "PF",
+    "lane": 11.76,
+    "shuttle": 3.18,
+    "sprint": 3.44,
+    "standing": 27.5,
+    "maxvert": 34.0,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 79.75,
+    "standingReach": 106.5,
+    "weight": 225.6,
+    "wingspan": 84.0
+  },
+  {
+    "PLAYER": "Isaiah Evans",
+    "POS": "SG",
+    "lane": 11.87,
+    "shuttle": 2.89,
+    "sprint": 3.18,
+    "standing": 27.0,
+    "maxvert": 35.5,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 9.0,
+    "heightNoShoes": 77.5,
+    "standingReach": 104.5,
+    "weight": 186.0,
+    "wingspan": 80.75
+  },
+  {
+    "PLAYER": "Joshua Jefferson",
+    "POS": "PF",
+    "lane": 11.91,
+    "shuttle": 3.08,
+    "sprint": 3.42,
+    "standing": 27.0,
+    "maxvert": 33.0,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 10.0,
+    "heightNoShoes": 79.75,
+    "standingReach": 104.5,
+    "weight": 246.2,
+    "wingspan": 82.75
+  },
+  {
+    "PLAYER": "Tyler Bilodeau",
+    "POS": "PF",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": 9.0,
+    "handWidth": 9.5,
+    "heightNoShoes": 79.25,
+    "standingReach": 107.0,
+    "weight": 228.2,
+    "wingspan": 84.75
+  },
+  {
+    "PLAYER": "Sergio De Larrea",
+    "POS": "PG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": null,
+    "handWidth": null,
+    "heightNoShoes": null,
+    "standingReach": null,
+    "weight": null,
+    "wingspan": null
+  },
+  {
+    "PLAYER": "Jaden Harris",
+    "POS": "SF",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": null,
+    "handWidth": null,
+    "heightNoShoes": null,
+    "standingReach": null,
+    "weight": null,
+    "wingspan": null
+  },
+  {
+    "PLAYER": "Jack Kayil",
+    "POS": "PG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": null,
+    "handWidth": null,
+    "heightNoShoes": null,
+    "standingReach": null,
+    "weight": null,
+    "wingspan": null
+  },
+  {
+    "PLAYER": "Jayden Quaintance",
+    "POS": "C",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": 9.5,
+    "handWidth": 11.0,
+    "heightNoShoes": 81.0,
+    "standingReach": 109.0,
+    "weight": 253.4,
+    "wingspan": 89.25
+  },
+  {
+    "PLAYER": "Richie Saunders",
+    "POS": "SG",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": 8.5,
+    "handWidth": 10.25,
+    "heightNoShoes": 77.0,
+    "standingReach": 102.5,
+    "weight": 204.8,
+    "wingspan": 80.75
+  },
+  {
+    "PLAYER": "Luigi Suigo",
+    "POS": "C",
+    "lane": null,
+    "shuttle": null,
+    "sprint": null,
+    "standing": null,
+    "maxvert": null,
+    "bench": null,
+    "handLength": 9.25,
+    "handWidth": 10.5,
+    "heightNoShoes": 86.75,
+    "standingReach": 114.0,
+    "weight": 289.0,
+    "wingspan": 89.5
+  }
+];
+
+    const metrics = {
+      lane:          { label: "Lane Agility Time", unit: "sec", better: "asc", digits: 2, format: "decimal" },
+      shuttle:       { label: "Shuttle Run", unit: "sec", better: "asc", digits: 2, format: "decimal" },
+      sprint:        { label: "Three Quarter Sprint", unit: "sec", better: "asc", digits: 2, format: "decimal" },
+      standing:      { label: "Standing Vertical Leap", unit: "in", better: "desc", digits: 1, format: "decimal" },
+      maxvert:       { label: "Max Vertical Leap", unit: "in", better: "desc", digits: 1, format: "decimal" },
+      bench:         { label: "Max Bench Press", unit: "reps", better: "desc", digits: 0, format: "decimal" },
+      handLength:    { label: "Hand Length", unit: "in", better: "desc", digits: 2, format: "decimal" },
+      handWidth:     { label: "Hand Width", unit: "in", better: "desc", digits: 2, format: "decimal" },
+      heightNoShoes: { label: "Height Without Shoes", unit: "", better: "desc", digits: 2, format: "feetInches" },
+      standingReach: { label: "Standing Reach", unit: "", better: "desc", digits: 2, format: "feetInches" },
+      weight:        { label: "Weight", unit: "lbs", better: "desc", digits: 1, format: "decimal" },
+      wingspan:      { label: "Wingspan", unit: "", better: "desc", digits: 2, format: "feetInches" }
+    };
+
+    let state = {
+      sortKey: "lane",
+      sortType: "number",
+      sortDir: "asc",
+      rankMetric: "lane",
+      playerFilter: "",
+      positionFilter: "",
+      selectedRowKey: null
+    };
+
+    const tbody = document.querySelector("#combineTable tbody");
+    const rankMetricSelect = document.querySelector("#rankMetric");
+    const playerSearch = document.querySelector("#playerSearch");
+    const positionFilter = document.querySelector("#positionFilter");
+    const summary = document.querySelector("#summary");
+
+    Object.entries(metrics).forEach(([key, meta]) => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = meta.label;
+      rankMetricSelect.appendChild(opt);
+    });
+    rankMetricSelect.value = state.rankMetric;
+
+    function inchesToFeetInches(value) {
+      if (!Number.isFinite(value)) return "-";
+      const feet = Math.floor(value / 12);
+      const inches = value - feet * 12;
+      return `${feet}' ${inches.toFixed(2)}"`;
+    }
+
+    function formatValue(value, key) {
+      if (value === null || value === undefined || value === "") return "-";
+      const meta = metrics[key];
+      if (meta?.format === "feetInches") return inchesToFeetInches(Number(value));
+      if (meta) return Number(value).toFixed(meta.digits);
+      return String(value);
+    }
+
+    function missingClass(row, key) {
+      return row[key] === null || row[key] === undefined || row[key] === "" ? "missing" : "";
+    }
+
+    function rowKey(row) {
+      return row.PLAYER + "|" + row.POS;
+    }
+
+    function sortColumnClass(key) {
+      return key === state.sortKey ? "sorted-column" : "";
+    }
+
+    function getRanks(rows, key) {
+      const meta = metrics[key];
+      if (!meta) return new Map();
+
+      const valid = rows
+        .filter(row => Number.isFinite(row[key]))
+        .sort((a, b) => meta.better === "asc" ? a[key] - b[key] : b[key] - a[key]);
+
+      const ranks = new Map();
+      let previousValue;
+      let currentRank = 0;
+
+      valid.forEach((row, index) => {
+        if (index === 0 || row[key] !== previousValue) {
+          currentRank = index + 1;
+          previousValue = row[key];
+        }
+        ranks.set(rowKey(row), currentRank);
+      });
+
+      return ranks;
+    }
+
+    function matchesPosition(rowPosition, filterValue) {
+      if (!filterValue) return true;
+      if (filterValue === "G") return rowPosition === "PG" || rowPosition === "SG";
+      if (filterValue === "F") return rowPosition === "SF" || rowPosition === "PF";
+      return rowPosition === filterValue;
+    }
+
+    function filteredData() {
+      const playerTerm = state.playerFilter.trim().toLowerCase();
+      const posTerm = state.positionFilter;
+
+      return data.filter(row => {
+        const playerMatch = !playerTerm || row.PLAYER.toLowerCase().includes(playerTerm);
+        const positionMatch = matchesPosition(row.POS, posTerm);
+        return playerMatch && positionMatch;
+      });
+    }
+
+    function sortRows(rows) {
+      const { sortKey, sortType, sortDir } = state;
+      const direction = sortDir === "asc" ? 1 : -1;
+
+      return rows.sort((a, b) => {
+        const av = a[sortKey];
+        const bv = b[sortKey];
+
+        if (sortType === "number") {
+          const aMissing = !Number.isFinite(av);
+          const bMissing = !Number.isFinite(bv);
+          if (aMissing && bMissing) return a.PLAYER.localeCompare(b.PLAYER);
+          if (aMissing) return 1;
+          if (bMissing) return -1;
+          if (av !== bv) return (av - bv) * direction;
+          return a.PLAYER.localeCompare(b.PLAYER);
+        }
+
+        return String(av).localeCompare(String(bv)) * direction || a.PLAYER.localeCompare(b.PLAYER);
+      });
+    }
+
+    function renderRankCell(row, filteredRanks, overallRanks, showOverallRank) {
+      const key = rowKey(row);
+      const filteredRank = filteredRanks.get(key);
+      const overallRank = overallRanks.get(key);
+
+      if (!filteredRank) return `<span class="missing">-</span>`;
+      if (!showOverallRank) return `${filteredRank}`;
+
+      const overallText = overallRank ? `Overall: ${overallRank}` : "Overall: -";
+      return `${filteredRank}<span class="overall-rank">(${overallText})</span>`;
+    }
+
+    function metricCell(row, key) {
+      return `<td class="num ${missingClass(row, key)} ${sortColumnClass(key)}">${formatValue(row[key], key)}</td>`;
+    }
+
+    function render() {
+      const filteredRows = filteredData();
+      const rows = sortRows([...filteredRows]);
+      const filteredRanks = getRanks(filteredRows, state.rankMetric);
+      const overallRanks = getRanks(data, state.rankMetric);
+      const showOverallRank = Boolean(state.playerFilter.trim() || state.positionFilter);
+      tbody.innerHTML = "";
+
+      rows.forEach(row => {
+        const tr = document.createElement("tr");
+        const key = rowKey(row);
+        tr.dataset.rowKey = key;
+        if (state.selectedRowKey === key) tr.classList.add("selected-row");
+        const rankCell = renderRankCell(row, filteredRanks, overallRanks, showOverallRank);
+        tr.innerHTML = `
+          <td class="num rank-cell">${rankCell}</td>
+          <td class="player-sticky ${sortColumnClass("PLAYER")}">${row.PLAYER}</td>
+          <td class="${sortColumnClass("POS")}">${row.POS}</td>
+          ${metricCell(row, "lane")}
+          ${metricCell(row, "shuttle")}
+          ${metricCell(row, "sprint")}
+          ${metricCell(row, "standing")}
+          ${metricCell(row, "maxvert")}
+          ${metricCell(row, "bench")}
+          ${metricCell(row, "handLength")}
+          ${metricCell(row, "handWidth")}
+          ${metricCell(row, "heightNoShoes")}
+          ${metricCell(row, "standingReach")}
+          ${metricCell(row, "weight")}
+          ${metricCell(row, "wingspan")}
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll("th.sortable").forEach(th => {
+        th.classList.remove("sorted-asc", "sorted-desc", "sorted-column");
+        if (th.dataset.key === state.sortKey) {
+          th.classList.add(`sorted-${state.sortDir}`);
+          th.classList.add("sorted-column");
+        }
+      });
+
+      const total = data.length;
+      const shown = rows.length;
+      const metricLabel = metrics[state.rankMetric].label;
+      const rankScope = showOverallRank
+        ? "Rank is recalculated within the current filters; overall rank is shown in parentheses."
+        : "Rank is currently overall rank across all players.";
+      summary.textContent = `Showing ${shown} of ${total} players. Rank is based on ${metricLabel}. ${rankScope}`;
+    }
+
+
+    tbody.addEventListener("click", event => {
+      const tr = event.target.closest("tr");
+      if (!tr) return;
+      state.selectedRowKey = state.selectedRowKey === tr.dataset.rowKey ? null : tr.dataset.rowKey;
+      render();
+    });
+
+    document.querySelectorAll("th.sortable").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.key;
+        const type = th.dataset.type;
+
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          state.sortKey = key;
+          state.sortType = type;
+          if (metrics[key]) {
+            state.sortDir = metrics[key].better;
+            state.rankMetric = key;
+            rankMetricSelect.value = key;
+          } else {
+            state.sortDir = "asc";
+          }
+        }
+
+        render();
+      });
+    });
+
+    rankMetricSelect.addEventListener("change", event => {
+      state.rankMetric = event.target.value;
+      render();
+    });
+
+    playerSearch.addEventListener("input", event => {
+      state.playerFilter = event.target.value;
+      render();
+    });
+
+    positionFilter.addEventListener("change", event => {
+      state.positionFilter = event.target.value;
+      render();
+    });
+
+    document.querySelector("#reset").addEventListener("click", () => {
+      state = {
+        sortKey: "lane",
+        sortType: "number",
+        sortDir: "asc",
+        rankMetric: "lane",
+        playerFilter: "",
+        positionFilter: "",
+        selectedRowKey: null
+      };
+      rankMetricSelect.value = state.rankMetric;
+      playerSearch.value = "";
+      positionFilter.value = "";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
